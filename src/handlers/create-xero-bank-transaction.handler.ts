@@ -21,6 +21,7 @@ async function createBankTransaction(
   lineItems: BankTransactionLineItem[],
   reference?: string,
   date?: string,
+  isReconciled?: boolean,
   tenantId?: string
 ): Promise<BankTransaction | undefined> {
   await xeroClient.authenticate();
@@ -37,7 +38,8 @@ async function createBankTransaction(
     lineItems: lineItems,
     date: date ?? new Date().toISOString().split("T")[0],
     reference: reference,
-    status: BankTransaction.StatusEnum.AUTHORISED
+    status: BankTransaction.StatusEnum.AUTHORISED,
+    ...(isReconciled !== undefined ? { isReconciled } : {})
   };
 
   const response = await xeroClient.accountingApi.createBankTransactions(
@@ -63,10 +65,11 @@ export async function createXeroBankTransaction(
   lineItems: BankTransactionLineItem[],
   reference?: string,
   date?: string,
+  isReconciled?: boolean,
   tenantId?: string
 ): Promise<XeroClientResponse<BankTransaction>> {
   try {
-    const createdTransaction = await createBankTransaction(type, bankAccountId, contactId, lineItems, reference, date, tenantId);
+    const createdTransaction = await createBankTransaction(type, bankAccountId, contactId, lineItems, reference, date, isReconciled, tenantId);
   
     if (!createdTransaction) {
       throw new Error("Bank transaction creation failed.");

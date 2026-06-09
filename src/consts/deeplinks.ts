@@ -25,6 +25,10 @@ export const bankTransactionDeepLink = (accountId: string, bankTransactionId: st
   return `https://go.xero.com/Bank/ViewTransaction.aspx?bankTransactionID=${bankTransactionId}&accountID=${accountId}`
 };
 
+export const bankTransferDeepLink = (accountId: string, fromBankTransactionId: string) => {
+  return `https://go.xero.com/Bank/ViewTransaction.aspx?bankTransactionID=${fromBankTransactionId}&accountID=${accountId}`;
+};
+
 export const manualJournalDeepLink = (journalId: string) => {
   return `https://go.xero.com/Journal/View.aspx?invoiceID=${journalId}`;
 };

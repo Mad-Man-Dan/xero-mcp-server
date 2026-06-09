@@ -14,10 +14,13 @@ const ListBankTransactionsTool = CreateXeroTool(
   if one was provided in the provided in the previous call.`,
   {
     page: z.number(),
-    bankAccountId: z.string().optional()
+    bankAccountId: z.string().optional(),
+    unreconciledOnly: z.boolean()
+      .optional()
+      .describe("If true, only return transactions that are not yet reconciled (IsReconciled == false). Useful for finding transactions that still need reconciling.")
   },
-  async ({ bankAccountId, page, tenantId }) => {
-    const response = await listXeroBankTransactions(page, bankAccountId, tenantId);
+  async ({ bankAccountId, page, unreconciledOnly, tenantId }) => {
+    const response = await listXeroBankTransactions(page, bankAccountId, unreconciledOnly, tenantId);
     if (response.isError) {
       return {
         content: [

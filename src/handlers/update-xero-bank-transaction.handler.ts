@@ -36,6 +36,7 @@ async function updateBankTransaction(
   lineItems?: BankTransactionLineItem[],
   reference?: string,
   date?: string,
+  isReconciled?: boolean,
   tenantId?: string
 ): Promise<BankTransaction | undefined> {
   await xeroClient.authenticate();
@@ -48,7 +49,8 @@ async function updateBankTransaction(
     contact: contactId ? { contactID: contactId } : existingBankTransaction.contact,
     lineItems: lineItems ? lineItems : existingBankTransaction.lineItems,
     reference: reference ? reference : existingBankTransaction.reference,
-    date: date ? date : existingBankTransaction.date
+    date: date ? date : existingBankTransaction.date,
+    isReconciled: isReconciled ?? existingBankTransaction.isReconciled
   };
 
   const response = await xeroClient.accountingApi.updateBankTransaction(
@@ -70,6 +72,7 @@ export async function updateXeroBankTransaction(
   lineItems?: BankTransactionLineItem[],
   reference?: string,
   date?: string,
+  isReconciled?: boolean,
   tenantId?: string
 ): Promise<XeroClientResponse<BankTransaction>> {
   try {
@@ -87,6 +90,7 @@ export async function updateXeroBankTransaction(
       lineItems,
       reference,
       date,
+      isReconciled,
       tenantId
     );
 

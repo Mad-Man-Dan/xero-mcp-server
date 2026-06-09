@@ -25,10 +25,15 @@ const CreateBankTransactionTool = CreateXeroTool(
     reference: z.string().optional(),
     date: z.string()
       .optional()
-      .describe("If no date is provided, the date will default to today's date")
+      .describe("If no date is provided, the date will default to today's date"),
+    isReconciled: z.boolean()
+      .optional()
+      .describe(
+        "Mark the transaction as reconciled. Only honoured when there is no matching bank statement line (e.g. agent-created transactions). Defaults to unreconciled.",
+      )
   },
-  async ({ type, bankAccountId, contactId, lineItems, reference, date, tenantId }) => {
-    const result = await createXeroBankTransaction(type, bankAccountId, contactId, lineItems, reference, date, tenantId);
+  async ({ type, bankAccountId, contactId, lineItems, reference, date, isReconciled, tenantId }) => {
+    const result = await createXeroBankTransaction(type, bankAccountId, contactId, lineItems, reference, date, isReconciled, tenantId);
 
     if (result.isError) {
       return {
@@ -58,6 +63,7 @@ const CreateBankTransactionTool = CreateXeroTool(
             `Contact: ${bankTransaction?.contact?.name}`,
             `Total: ${bankTransaction?.total}`,
             `Status: ${bankTransaction?.status}`,
+            `Reconciled: ${bankTransaction?.isReconciled ? "Yes" : "No"}`,
             deepLink ? `Link to view: ${deepLink}` : null
           ].filter(Boolean).join("\n"),
         },
