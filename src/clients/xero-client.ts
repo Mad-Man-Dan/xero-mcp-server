@@ -1,4 +1,4 @@
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import { exec } from "child_process";
 import dotenv from "dotenv";
 import * as client from "openid-client";
@@ -10,6 +10,7 @@ import {
 } from "xero-node";
 
 import { ensureError } from "../helpers/ensure-error.js";
+import { formatError } from "../helpers/format-error.js";
 import { TokenStore } from "./token-store.js";
 import { OAuthCallbackServer } from "./oauth-callback-server.js";
 
@@ -156,7 +157,8 @@ class CustomConnectionsXeroClient extends MCPXeroClient {
 
   public async getClientCredentialsToken(): Promise<TokenSet> {
     const scope =
-      "accounting.invoices accounting.invoices.read accounting.payments accounting.payments.read accounting.banktransactions accounting.banktransactions.read accounting.manualjournals accounting.manualjournals.read accounting.contacts accounting.settings accounting.reports.aged.read accounting.reports.balancesheet.read accounting.reports.profitandloss.read accounting.reports.trialbalance.read payroll.settings payroll.employees payroll.timesheets";
+      process.env.XERO_SCOPES ??
+      "accounting.invoices accounting.invoices.read accounting.payments accounting.payments.read accounting.banktransactions accounting.banktransactions.read accounting.manualjournals accounting.manualjournals.read accounting.journals.read accounting.contacts accounting.settings accounting.reports.aged.read accounting.reports.balancesheet.read accounting.reports.profitandloss.read accounting.reports.trialbalance.read payroll.settings payroll.employees payroll.timesheets";
     const credentials = Buffer.from(
       `${this.clientId}:${this.clientSecret}`,
     ).toString("base64");
@@ -192,10 +194,7 @@ class CustomConnectionsXeroClient extends MCPXeroClient {
 
       return response.data;
     } catch (error) {
-      const axiosError = error as AxiosError;
-      throw new Error(
-        `Failed to get Xero token: ${axiosError.response?.data || axiosError.message}`,
-      );
+      throw new Error(`Failed to get Xero token: ${formatError(error)}`);
     }
   }
 
@@ -232,7 +231,8 @@ class BearerTokenXeroClient extends MCPXeroClient {
 
 const XERO_ISSUER = new URL("https://identity.xero.com");
 const XERO_SCOPES =
-  "openid profile email accounting.invoices accounting.invoices.read accounting.payments accounting.payments.read accounting.banktransactions accounting.banktransactions.read accounting.manualjournals accounting.manualjournals.read accounting.contacts accounting.settings accounting.reports.aged.read accounting.reports.balancesheet.read accounting.reports.profitandloss.read accounting.reports.trialbalance.read payroll.settings payroll.employees payroll.timesheets offline_access";
+  process.env.XERO_SCOPES ??
+  "openid profile email accounting.invoices accounting.invoices.read accounting.payments accounting.payments.read accounting.banktransactions accounting.banktransactions.read accounting.manualjournals accounting.manualjournals.read accounting.journals.read accounting.contacts accounting.settings accounting.reports.aged.read accounting.reports.balancesheet.read accounting.reports.profitandloss.read accounting.reports.trialbalance.read payroll.settings payroll.employees payroll.timesheets offline_access";
 
 class AuthCodeXeroClient extends MCPXeroClient {
   private readonly tokenStore: TokenStore;

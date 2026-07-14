@@ -2,6 +2,7 @@ import { z } from "zod";
 import { CreateXeroTool } from "../../helpers/create-xero-tool.js";
 import { updateXeroBankTransaction } from "../../handlers/update-xero-bank-transaction.handler.js";
 import { bankTransactionDeepLink } from "../../consts/deeplinks.js";
+import { formatXeroDate } from "../../helpers/format-date.js";
 
 const lineItemSchema = z.object({
   description: z.string(),
@@ -14,6 +15,9 @@ const lineItemSchema = z.object({
 const UpdateBankTransactionTool = CreateXeroTool(
   "update-bank-transaction",
   `Update a bank transaction in Xero.
+  Only the fields you provide are changed; omitted fields keep their existing values.
+  For metadata-only edits (e.g. just setting isReconciled or changing the reference),
+  do NOT pass lineItems — the existing line items are preserved automatically.
   When a bank transaction is updated, a deep link to the bank transaction in Xero is returned.
   This deep link can be used to view the bank transaction in Xero directly.
   This link should be displayed to the user.`,
@@ -22,8 +26,8 @@ const UpdateBankTransactionTool = CreateXeroTool(
     type: z.enum(["RECEIVE", "SPEND"]).optional(),
     contactId: z.string().optional(),
     lineItems: z.array(lineItemSchema).optional().describe(
-      "All line items must be provided. Any line items not provided will be removed. Including existing line items. \
-      Do not modify line items that have not been specified by the user",
+      "Optional. Only provide this to change the line items. If provided, it REPLACES the full set — any existing line item you omit will be removed. \
+      Omit this field entirely to leave the existing line items untouched (use this for metadata-only updates).",
     ),
     reference: z.string().optional(),
     date: z.string().optional(),
@@ -71,7 +75,7 @@ const UpdateBankTransactionTool = CreateXeroTool(
           text: [
             "Bank transaction updated successfully:",
             `ID: ${bankTransaction?.bankTransactionID}`,
-            `Date: ${bankTransaction?.date}`,
+            `Date: ${formatXeroDate(bankTransaction?.date)}`,
             `Contact: ${bankTransaction?.contact?.name}`,
             `Total: ${bankTransaction?.total}`,
             `Status: ${bankTransaction?.status}`,

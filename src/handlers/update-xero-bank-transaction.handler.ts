@@ -42,6 +42,10 @@ async function updateBankTransaction(
   await xeroClient.authenticate();
   const resolvedTenantId = xeroClient.resolveTenantId(tenantId);
 
+  // Start from the existing transaction so unspecified fields (LineAmountTypes,
+  // currency, bank account, and — when no new line items are supplied — the
+  // existing line items with their LineItemIDs) are preserved. This makes
+  // metadata-only edits (e.g. just flipping isReconciled) safe.
   const bankTransaction: BankTransaction = {
     ...existingBankTransaction,
     bankTransactionID: bankTransactionId,
@@ -52,6 +56,18 @@ async function updateBankTransaction(
     date: date ? date : existingBankTransaction.date,
     isReconciled: isReconciled ?? existingBankTransaction.isReconciled
   };
+
+  // Remove server-calculated / read-only fields. If stale document totals are
+  // sent back, Xero rejects with "document total does not equal the total of
+  // the lines" (ErrorNumber 10). Dropping them lets Xero recompute from the
+  // line items. We deliberately do NOT touch LineAmountTypes (forcing it would
+  // change tax interpretation and cause the same mismatch).
+  delete bankTransaction.subTotal;
+  delete bankTransaction.totalTax;
+  delete bankTransaction.total;
+  delete bankTransaction.updatedDateUTC;
+  delete bankTransaction.statusAttributeString;
+  delete bankTransaction.validationErrors;
 
   const response = await xeroClient.accountingApi.updateBankTransaction(
     resolvedTenantId, // xeroTenantId

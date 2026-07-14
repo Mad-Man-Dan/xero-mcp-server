@@ -2,6 +2,7 @@ import { z } from "zod";
 import { CreateXeroTool } from "../../helpers/create-xero-tool.js";
 import { createXeroBankTransfer } from "../../handlers/create-xero-bank-transfer.handler.js";
 import { bankTransferDeepLink } from "../../consts/deeplinks.js";
+import { formatXeroDate } from "../../helpers/format-date.js";
 
 const CreateBankTransferTool = CreateXeroTool(
   "create-bank-transfer",
@@ -64,7 +65,7 @@ const CreateBankTransferTool = CreateXeroTool(
           text: [
             "Bank transfer created successfully:",
             `ID: ${bankTransfer?.bankTransferID}`,
-            `Date: ${bankTransfer?.date}`,
+            `Date: ${formatXeroDate(bankTransfer?.date)}`,
             `From: ${bankTransfer?.fromBankAccount?.name ?? bankTransfer?.fromBankAccount?.accountID}`,
             `To: ${bankTransfer?.toBankAccount?.name ?? bankTransfer?.toBankAccount?.accountID}`,
             `Amount: ${bankTransfer?.amount}`,

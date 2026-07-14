@@ -1,6 +1,7 @@
 import { CreateXeroTool } from "../../helpers/create-xero-tool.js";
 import { listXeroBankTransfers } from "../../handlers/list-xero-bank-transfers.handler.js";
 import { bankTransferDeepLink } from "../../consts/deeplinks.js";
+import { formatXeroDate } from "../../helpers/format-date.js";
 
 const ListBankTransfersTool = CreateXeroTool(
   "list-bank-transfers",
@@ -42,7 +43,7 @@ const ListBankTransfersTool = CreateXeroTool(
               `From: ${transfer.fromBankAccount?.name ?? transfer.fromBankAccount?.accountID}`,
               `To: ${transfer.toBankAccount?.name ?? transfer.toBankAccount?.accountID}`,
               `Amount: ${transfer.amount}`,
-              transfer.date ? `Date: ${transfer.date}` : null,
+              transfer.date ? `Date: ${formatXeroDate(transfer.date)}` : null,
               transfer.reference ? `Reference: ${transfer.reference}` : null,
               `From Reconciled: ${transfer.fromIsReconciled ? "Yes" : "No"}`,
               `To Reconciled: ${transfer.toIsReconciled ? "Yes" : "No"}`,

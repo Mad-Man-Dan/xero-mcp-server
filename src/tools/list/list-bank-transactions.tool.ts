@@ -2,6 +2,7 @@ import { z } from "zod";
 import { CreateXeroTool } from "../../helpers/create-xero-tool.js";
 import { listXeroBankTransactions } from "../../handlers/list-xero-bank-transactions.handler.js";
 import { formatLineItem } from "../../helpers/format-line-item.js";
+import { formatXeroDate } from "../../helpers/format-date.js";
 
 const ListBankTransactionsTool = CreateXeroTool(
   "list-bank-transactions",
@@ -49,7 +50,7 @@ const ListBankTransactionsTool = CreateXeroTool(
               ? `Contact: ${transaction.contact.name} (${transaction.contact.contactID})`
               : null,
             transaction.reference ? `Reference: ${transaction.reference}` : null,
-            transaction.date ? `Date: ${transaction.date}` : null,
+            transaction.date ? `Date: ${formatXeroDate(transaction.date)}` : null,
             transaction.subTotal ? `Sub Total: ${transaction.subTotal}` : null,
             transaction.totalTax ? `Total Tax: ${transaction.totalTax}` : null,
             transaction.total ? `Total: ${transaction.total}` : null,

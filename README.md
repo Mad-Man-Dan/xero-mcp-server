@@ -7,12 +7,16 @@ This is a fork of [XeroAPI/xero-mcp-server](https://github.com/XeroAPI/xero-mcp-
 - **Multi-tenant support** — list, switch, and target specific Xero organisations at runtime
 - **Authorization Code flow with PKCE** — connect to multiple orgs via OAuth2 (Custom Connections are limited to a single org)
 - **Persistent token storage** — OAuth tokens are cached locally and refresh automatically, so you only authorize in the browser once
+- **Standalone login script** — run `npm run login` to authorize (or add more) organisations without starting the MCP server
 - **Per-call tenant override** — every tool accepts an optional `tenantId` parameter to target a specific org without switching globally
-- **Granular OAuth scopes** — migrated from deprecated umbrella scopes (`accounting.transactions`, `accounting.reports.read`) to Xero's new granular scopes
+- **Granular OAuth scopes** — migrated from deprecated umbrella scopes (`accounting.transactions`, `accounting.reports.read`) to Xero's new granular scopes; override the full scope set via the `XERO_SCOPES` env var
+- **General ledger Journals endpoint** — `list-journals` exposes Xero's read-only Journals API, returning every journal posted to the GL (invoices, payments, bank transactions, payroll, manual journals, etc.) with offset-based pagination and a cash-basis option
 - **Accounts (Chart of Accounts) CRUD** — get, create, update, and delete accounts
+- **Bank transfers** — create and list transfers between bank accounts
+- **Bank transaction management** — delete (void) spend/receive money transactions; safer partial updates that preserve existing line items on metadata-only edits (e.g. flipping `isReconciled`)
 - **Generic attachment tools** — list, download, and upload attachments across all entity types (invoices, contacts, manual journals, etc.)
 - **Invoice status control** — create invoices as DRAFT, SUBMITTED, or AUTHORISED; update invoices to transition status (approve, void, delete); custom due dates on create
-- **New tools:** `list-xero-tenants`, `switch-xero-tenant`, `get-account`, `create-account`, `update-account`, `delete-account`, `list-attachments`, `get-attachment`, `upload-attachment`
+- **New tools:** `list-xero-tenants`, `switch-xero-tenant`, `list-journals`, `get-account`, `create-account`, `update-account`, `delete-account`, `create-bank-transfer`, `list-bank-transfers`, `delete-bank-transaction`, `list-attachments`, `get-attachment`, `upload-attachment`
 
 ## Prerequisites
 
@@ -89,12 +93,25 @@ claude mcp add --scope user xero \
 4. Subsequent sessions reuse the cached tokens with no browser interaction
 5. If the refresh token expires (60+ days of inactivity), the browser opens again for re-authorization
 
+##### Connecting Multiple Client Organisations
+
+To connect several organisations back-to-back — including orgs under different Xero logins — use the standalone login script instead of waiting for the server's first-use prompt:
+
+```bash
+npm run login
+```
+
+Each pass opens the browser for one authorization: sign in with whichever Xero login has access to that client and connect the org. When the authorization completes, the script asks whether to authorize another account and repeats until you answer no. Connections accumulate on your Xero app across passes, so each authorization adds to the set of connected orgs rather than replacing it.
+
+The script saves tokens to the same store the MCP server uses, so no server restart or reconfiguration is needed. Re-run it any time to add more organisations later, and verify what's connected with `list-xero-tenants`.
+
 ##### Optional Environment Variables
 
 | Variable | Default | Description |
 |---|---|---|
 | `XERO_CALLBACK_PORT` | `3000` | Port for the OAuth callback server |
 | `XERO_TOKEN_STORE_PATH` | `~/.xero-mcp/tokens.json` | Override the token storage location |
+| `XERO_SCOPES` | See [Required Scopes](#required-scopes) | Space-separated list overriding the default OAuth scopes requested |
 
 #### 2. Custom Connections (Single Org Only)
 
@@ -153,6 +170,7 @@ accounting.banktransactions
 accounting.banktransactions.read
 accounting.manualjournals
 accounting.manualjournals.read
+accounting.journals.read
 
 # Accounting - Other
 accounting.contacts
@@ -171,6 +189,8 @@ payroll.timesheets
 ```
 
 > See the [Xero OAuth 2.0 Scopes documentation](https://developer.xero.com/documentation/guides/oauth2/scopes/) for the full list and deprecation timeline.
+
+> NOTE: `accounting.journals.read` (used by `list-journals`) is a restricted scope — Xero may require you to request access to the Journals endpoint for your app. If your app doesn't have it, set `XERO_SCOPES` to a scope list without it, or authorization will fail.
 
 ## Multi-Tenant Usage
 
@@ -237,6 +257,8 @@ Every tool accepts an optional `tenantId` parameter. This lets you query a speci
 - `list-quotes`: Retrieve quotes
 - `list-tax-rates`: Retrieve tax rates
 - `list-bank-transactions`: Retrieve bank transactions
+- `list-bank-transfers`: Retrieve bank transfers
+- `list-journals`: Retrieve general ledger journals (every journal Xero posts to the GL — from invoices, payments, bank transactions, payroll, etc.), with offset-based pagination and an optional cash-basis mode
 - `list-tracking-categories`: Retrieve tracking categories
 - `list-profit-and-loss`: Retrieve profit and loss report
 - `list-report-balance-sheet`: Retrieve balance sheet report
@@ -262,6 +284,7 @@ Every tool accepts an optional `tenantId` parameter. This lets you query a speci
 
 ### Create Operations
 - `create-bank-transaction`: Create a bank transaction
+- `create-bank-transfer`: Create a transfer between two bank accounts
 - `create-contact`: Create a contact
 - `create-credit-note`: Create a credit note
 - `create-invoice`: Create an invoice
@@ -273,7 +296,7 @@ Every tool accepts an optional `tenantId` parameter. This lets you query a speci
 - `create-tracking-options`: Create tracking options
 
 ### Update Operations
-- `update-bank-transaction`: Update a bank transaction
+- `update-bank-transaction`: Update a bank transaction (partial update — omitted fields and line items are preserved)
 - `update-contact`: Update a contact
 - `update-credit-note`: Update a draft credit note
 - `update-invoice`: Update a draft invoice
@@ -282,6 +305,9 @@ Every tool accepts an optional `tenantId` parameter. This lets you query a speci
 - `update-quote`: Update a draft quote
 - `update-tracking-category`: Update a tracking category
 - `update-tracking-options`: Update tracking options
+
+### Delete Operations
+- `delete-bank-transaction`: Delete (void) a spend or receive money bank transaction
 
 For detailed API documentation, refer to the [MCP Protocol Specification](https://modelcontextprotocol.io/).
 

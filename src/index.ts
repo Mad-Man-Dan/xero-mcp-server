@@ -3,6 +3,7 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { XeroMcpServer } from "./server/xero-mcp-server.js";
 import { ToolFactory } from "./tools/tool-factory.js";
+import { scrubSecrets } from "./helpers/format-error.js";
 
 const main = async () => {
   // Create an MCP server
@@ -16,6 +17,8 @@ const main = async () => {
 };
 
 main().catch((error) => {
-  console.error("Error:", error);
+  // Never log the raw error object — an Axios-style error carries the Bearer
+  // token in its request config. Log a scrubbed message only.
+  console.error("Error:", scrubSecrets(error instanceof Error ? error.message : String(error)));
   process.exit(1);
 });
